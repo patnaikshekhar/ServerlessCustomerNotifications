@@ -1,0 +1,178 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Convert_to_JSON": {
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "EmployeeList",
+                            "type": "array",
+                            "value": "@json(xml(body('Flat_File_Decoding'))).Customer.Employee"
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Flat_File_Decoding": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "InitializeVariable"
+            },
+            "Flat_File_Decoding": {
+                "inputs": {
+                    "content": "@{body('Get_blob_content')}",
+                    "integrationAccount": {
+                        "schema": {
+                            "name": "personCSV"
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Get_blob_content": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "FlatFileDecoding"
+            },
+            "For_each": {
+                "actions": {
+                    "Switch": {
+                        "cases": {
+                            "Email": {
+                                "actions": {
+                                    "Send_an_email_(V2)": {
+                                        "inputs": {
+                                            "body": {
+                                                "Body": "@{items('For_each').Message}",
+                                                "Subject": "Message from Logic App",
+                                                "To": "@{items('For_each').Location}"
+                                            },
+                                            "host": {
+                                                "connection": {
+                                                    "name": "@parameters('$connections')['office365']['connectionId']"
+                                                }
+                                            },
+                                            "method": "post",
+                                            "path": "/v2/Mail"
+                                        },
+                                        "runAfter": {},
+                                        "type": "ApiConnection"
+                                    }
+                                },
+                                "case": "Email"
+                            },
+                            "SMS": {
+                                "actions": {
+                                    "Send_Text_Message_(SMS)": {
+                                        "inputs": {
+                                            "body": {
+                                                "body": "@{items('For_each').Message}",
+                                                "from": "+441344567256",
+                                                "to": "@{items('For_each').Location}"
+                                            },
+                                            "host": {
+                                                "connection": {
+                                                    "name": "@parameters('$connections')['twilio']['connectionId']"
+                                                }
+                                            },
+                                            "method": "post",
+                                            "path": "/Messages.json"
+                                        },
+                                        "runAfter": {},
+                                        "type": "ApiConnection"
+                                    }
+                                },
+                                "case": "SMS"
+                            }
+                        },
+                        "default": {
+                            "actions": {}
+                        },
+                        "expression": "@items('For_each').Type",
+                        "runAfter": {},
+                        "type": "Switch"
+                    }
+                },
+                "foreach": "@variables('EmployeeList')",
+                "runAfter": {
+                    "Convert_to_JSON": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Foreach"
+            },
+            "Get_blob_content": {
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azureblob']['connectionId']"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/datasets/default/files/@{encodeURIComponent(encodeURIComponent(triggerBody()?['Path']))}/content",
+                    "queries": {
+                        "inferContentType": true
+                    }
+                },
+                "runAfter": {},
+                "type": "ApiConnection"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {
+            "$connections": {
+                "defaultValue": {},
+                "type": "Object"
+            }
+        },
+        "triggers": {
+            "When_a_blob_is_added_or_modified_(properties_only)": {
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "name": "@parameters('$connections')['azureblob']['connectionId']"
+                        }
+                    },
+                    "method": "get",
+                    "path": "/datasets/default/triggers/batch/onupdatedfile",
+                    "queries": {
+                        "folderId": "JTJmY3N2ZHJvcA==",
+                        "maxFileCount": 1
+                    }
+                },
+                "metadata": {
+                    "JTJmY3N2ZHJvcA==": "/csvdrop"
+                },
+                "recurrence": {
+                    "frequency": "Minute",
+                    "interval": 3
+                },
+                "splitOn": "@triggerBody()",
+                "type": "ApiConnection"
+            }
+        }
+    },
+    "parameters": {
+        "$connections": {
+            "value": {
+                "azureblob": {
+                    "connectionId": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/XoserveSMS/providers/Microsoft.Web/connections/azureblob",
+                    "connectionName": "azureblob",
+                    "id": "/subscriptions/SUBSCRIPTION_ID/providers/Microsoft.Web/locations/eastus/managedApis/azureblob"
+                },
+                "office365": {
+                    "connectionId": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/XoserveSMS/providers/Microsoft.Web/connections/office365",
+                    "connectionName": "office365",
+                    "id": "/subscriptions/SUBSCRIPTION_ID/providers/Microsoft.Web/locations/eastus/managedApis/office365"
+                },
+                "twilio": {
+                    "connectionId": "/subscriptions/SUBSCRIPTION_ID/resourceGroups/XoserveSMS/providers/Microsoft.Web/connections/twilio",
+                    "connectionName": "twilio",
+                    "id": "/subscriptions/SUBSCRIPTION_ID/providers/Microsoft.Web/locations/eastus/managedApis/twilio"
+                }
+            }
+        }
+    }
+}
