@@ -4,8 +4,15 @@
       "name": "myBlob",
       "type": "blobTrigger",
       "direction": "in",
-      "path": "samples-workitems/{name}",
-      "connection": ""
+      "path": "csvdrop2/{name}",
+      "connection": "MyStorageConnectionAppSetting"
+    },
+    {
+      "name": "blobValue",
+      "type": "blob",
+      "direction": "in",
+      "path": "csvdrop2/{name}",
+      "connection": "MyStorageConnectionAppSetting"
     }
   ]
 }
