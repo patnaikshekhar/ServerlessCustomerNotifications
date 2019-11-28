@@ -1,6 +1,7 @@
 const twilioAccountSid = process.env.TWIL_ACCOUNT_ID
 const twilioAuthToken = process.env.TWIL_AUTH_TOKEN
 const twilioSendingNumber = process.env.TWIL_SENDING_NUMBER
+
 const twilioClient = require('twilio')(twilioAccountSid, twilioAuthToken)
 const sgMail = require('@sendgrid/mail')
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)

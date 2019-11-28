@@ -5,14 +5,14 @@
       "type": "blobTrigger",
       "direction": "in",
       "path": "csvdrop2/{name}",
-      "connection": "MyStorageConnectionAppSetting"
+      "connection": "sapcsvdropsmspoc_STORAGE"
     },
     {
       "name": "blobValue",
       "type": "blob",
       "direction": "in",
       "path": "csvdrop2/{name}",
-      "connection": "MyStorageConnectionAppSetting"
+      "connection": "sapcsvdropsmspoc_STORAGE"
     }
   ]
 }
